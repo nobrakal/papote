@@ -13,9 +13,9 @@ let store i r a cont =
 let example =
   [ store 0 "r" "a" Unit
   ; assign 1 "a" 2 Unit
-  ; assign 2 "a" 1 Unit ]
+  ; assign 2 "b" 1 Unit ]
 
 let () =
   let es = Papote.Seq_cons.trace example in
-  let dot = ES.to_dot (fun x -> [Causality_tracing.Dot.Attribute.label (string_of_label (Event.label x))]) es in
-  Causality_tracing.Dot.to_file dot "test.dot"
+  let dot = ES.to_dot (fun x -> [Dot.Attribute.label (string_of_label (Event.label x))]) es in
+  Dot.view dot

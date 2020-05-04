@@ -32,12 +32,12 @@ let iarith rm (a:arith) : int t =
   in aux a
 
 let set_cell loc v g gm =
-  Tracing.emit_in_view (Write (loc,string_of_global g,v)) >>
-    Cell.set (GM.find g gm) v
+  let act = Tracing.emit_in_view (Write (loc,string_of_global g,v)) in
+  Cell.set ~act (GM.find g gm) v
 
 let get_cell loc g gm =
-  Cell.get (GM.find g gm) >>= fun v ->
-  Tracing.emit_in_view (Read (loc,string_of_global g,v)) >> return v
+  let act v = Tracing.emit_in_view (Read (loc,string_of_global g,v)) in
+  Cell.get ~act (GM.find g gm)
 
 let ithread gm (t:thread) : unit t =
   let rec aux rm = function
