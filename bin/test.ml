@@ -1,5 +1,5 @@
 open Papote.Program
-open Papote.Seq_cons
+open Papote.Caus_sem
 open Causality_tracing
 
 let with_loc i x = {obj=x;loc={line=i;column=0}}
@@ -16,6 +16,6 @@ let example =
   ; assign 2 "b" 1 Unit ]
 
 let () =
-  let es = Papote.Seq_cons.trace example in
+  let es = trace sc example in
   let dot = ES.to_dot (fun x -> [Dot.Attribute.label (string_of_label (Event.label x))]) es in
   Dot.view dot
