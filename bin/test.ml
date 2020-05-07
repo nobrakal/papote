@@ -12,8 +12,7 @@ let store i r a cont =
 
 let example =
   [ store 0 "r" "a" Unit
-  ; assign 1 "a" 2 Unit
-  ; assign 2 "b" 1 Unit ]
+  ; assign 1 "a" 2 (assign 1 "a" 3 Unit) ]
 
 let () =
   let es = trace sc example in
