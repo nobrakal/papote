@@ -12,8 +12,8 @@ type arith =
   | Binop of binop * arith * arith
 
 type thread =
-  | Assign of (global * arith) located * thread
-  | Store of (register * global) located * thread
+  | Store of (global * arith) located * thread
+  | Load of (register * global) located * thread
   | IfThenElse of arith located * thread * thread
   | Unit
 

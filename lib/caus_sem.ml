@@ -64,12 +64,12 @@ let ithread (analyse_buf : buffer -> int) gm (t:thread) : unit t =
      return ()
   | IfThenElse (i,t,e) ->
      iarith rm i.obj >>= (fun i -> if i = 0 then aux buffer rm t else aux buffer rm e)
-  | Assign ((x,t)) ->
+  | Store ((x,t)) ->
      let g,e = x.obj in
      iarith rm e >>= fun e ->
      set_cell analyse_buf x.loc g e gm buffer >>= fun buffer ->
      aux buffer rm t
-  | Store (x,t) ->
+  | Load (x,t) ->
      let r,g = x.obj in
      get_cell x.loc g gm buffer >>= fun e ->
      aux buffer (RM.add r e rm) t
