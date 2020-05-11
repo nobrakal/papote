@@ -10,11 +10,15 @@ let store i a c cont =
 let load i r a cont =
   Load (with_loc i (R r, G a), cont)
 
-let example =
-  [ load 0 "r" "a" Unit
-  ; store 1 "a" 2 (store 1 "a" 3 Unit) ]
+let store_buffering =
+  [ store 0 "x" 1 (load 0 "r" "y" Unit)
+  ; store 1 "y" 1 (load 1 "r" "x" Unit) ]
+
+let read_own_write_early =
+  [ store 0 "x" 1 (load 0 "r" "x" (load 0 "r" "y" Unit))
+  ; store 1 "y" 1 (load 1 "r" "y" (load 1 "r" "x" Unit)) ]
 
 let () =
-  let es = trace rand example in
+  let es = trace sc read_own_write_early in
   let dot = ES.to_dot (fun x -> [Dot.Attribute.label (string_of_label (Event.label x))]) es in
   Dot.view dot
