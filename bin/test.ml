@@ -12,9 +12,9 @@ let load i r a cont =
 
 let example =
   [ load 0 "r" "a" Unit
-  ; store 1 "a" 2 (store 1 "a" 3 Unit) ]
+  ; store 1 "a" 2 Unit ]
 
 let () =
-  let es = trace sc example in
+  let es = trace rand example in
   let dot = ES.to_dot (fun x -> [Dot.Attribute.label (string_of_label (Event.label x))]) es in
   Dot.view dot

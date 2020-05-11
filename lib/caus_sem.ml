@@ -39,17 +39,17 @@ let write_buffer gm buffer =
     Cell.set ~act (GM.find g gm) v in
   List.fold_right (fun x acc -> acc >> aux x) buffer (return ())
 
-let rec split_at i xs =
+let rec split_at_last xs =
   match xs with
-  | [] -> [],[]
-  | y::ys ->
-     if i <= 0 then [],xs
-     else let n,l = split_at (i-1) ys in y::n,l
+  | [] -> assert false
+  | [x] -> [],x
+  | x::xs ->
+     let ys,y = split_at_last xs in
+     x::ys,y
 
-let set_cell analyse_buff loc g v gm buffer =
-  let buffer = (g,(loc,v))::buffer in
-  let newbuf,to_write = split_at (List.length buffer - analyse_buff buffer) buffer in
-  write_buffer gm to_write >> return newbuf
+let write_head_buffer gm buffer =
+  let xs,x = split_at_last buffer in
+  write_buffer gm [x] >> return xs
 
 let get_cell loc g gm buffer =
   match List.assoc_opt g buffer with
@@ -58,21 +58,32 @@ let get_cell loc g gm buffer =
      let act v = Tracing.emit_in_view (Read (loc,string_of_global g,v)) in
      Cell.get ~act (GM.find g gm)
 
-let ithread (analyse_buf : buffer -> int) gm (t:thread) : unit t =
-  let rec aux (buffer : buffer) rm = function
-  | Unit ->
-     return ()
-  | IfThenElse (i,t,e) ->
-     iarith rm i.obj >>= (fun i -> if i = 0 then aux buffer rm t else aux buffer rm e)
-  | Store ((x,t)) ->
-     let g,e = x.obj in
-     iarith rm e >>= fun e ->
-     set_cell analyse_buf x.loc g e gm buffer >>= fun buffer ->
-     aux buffer rm t
-  | Load (x,t) ->
-     let r,g = x.obj in
-     get_cell x.loc g gm buffer >>= fun e ->
-     aux buffer (RM.add r e rm) t
+let null xs =
+  match xs with
+  | [] -> true
+  | _ -> false
+
+let ithread (analyse_buf : buffer -> bool t) gm (t:thread) : unit t =
+  let rec aux (buffer : buffer) rm x =
+    analyse_buf buffer >>= fun write ->
+    if not (null buffer) && write
+    then write_head_buffer gm buffer >>= fun buffer -> aux buffer rm x
+    else
+      match x with
+      | Unit ->
+         return ()
+      | IfThenElse (i,t,e) ->
+         iarith rm i.obj >>= (fun i -> if i = 0 then aux buffer rm t else aux buffer rm e)
+      | Store ((x,t)) ->
+         let g,e = x.obj in
+         iarith rm e >>= fun e ->
+         aux ((g,(x.loc,e))::buffer) rm t
+      | Load (x,t) ->
+         let r,g = x.obj in
+         get_cell x.loc g gm buffer >>= fun e ->
+         aux buffer (RM.add r e rm) t
+      | Mfence t ->
+         write_buffer gm buffer >> aux [] rm t
   in aux [] RM.empty t
 
 let iprogram analyse_buf (p:program) : unit t =
@@ -83,4 +94,6 @@ let iprogram analyse_buf (p:program) : unit t =
 let trace analyse_buf (p:program) : label ES.t =
   Tracing.get_es (Run.comp (Tracing.init >> iprogram analyse_buf p))
 
-let sc = List.length
+let sc _ = return true
+
+let rand _ = Monad.sum [return true;return false]

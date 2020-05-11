@@ -15,6 +15,7 @@ type thread =
   | Store of (global * arith) located * thread
   | Load of (register * global) located * thread
   | IfThenElse of arith located * thread * thread
+  | Mfence of thread
   | Unit
 
 type program = thread list
