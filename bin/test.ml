@@ -12,7 +12,7 @@ let load i r a cont =
 
 let example =
   [ load 0 "r" "a" Unit
-  ; store 1 "a" 2 Unit ]
+  ; store 1 "a" 2 (store 1 "a" 3 Unit) ]
 
 let () =
   let es = trace rand example in

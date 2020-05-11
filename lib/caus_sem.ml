@@ -65,11 +65,7 @@ let null xs =
 
 let ithread (analyse_buf : buffer -> bool t) gm (t:thread) : unit t =
   let rec aux (buffer : buffer) rm x =
-    analyse_buf buffer >>= fun write ->
-    if not (null buffer) && write
-    then write_head_buffer gm buffer >>= fun buffer -> aux buffer rm x
-    else
-      match x with
+    let run = function
       | Unit ->
          return ()
       | IfThenElse (i,t,e) ->
@@ -83,7 +79,15 @@ let ithread (analyse_buf : buffer -> bool t) gm (t:thread) : unit t =
          get_cell x.loc g gm buffer >>= fun e ->
          aux buffer (RM.add r e rm) t
       | Mfence t ->
-         write_buffer gm buffer >> aux [] rm t
+         write_buffer gm buffer >> aux [] rm t in
+    if null buffer
+    then run x
+    else
+      analyse_buf buffer >>= fun write ->
+      if write
+      then write_head_buffer gm buffer >>= fun buffer -> aux buffer rm x
+      else run x
+
   in aux [] RM.empty t
 
 let iprogram analyse_buf (p:program) : unit t =
